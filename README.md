@@ -29,29 +29,8 @@ Keep SSH locked down by allowing only *your* current public IP (/32) on an Aliba
 Exposing SSH to `0.0.0.0/0` is risky. This tool enforces least-privilege by updating a single `/32` rule when your IP changes and optionally purging world-open rules.
 
 ## Quick start
-## Prerequisites
-- Python 3.8+
-- Alibaba Cloud CLI installed and configured (`aliyun configure`)  
-  Profile: `sg_auth` • Region: `me-central-1`
-- RAM permissions: ecs:AuthorizeSecurityGroup, ecs:RevokeSecurityGroup, ecs:DescribeSecurityGroups, ecs:DescribeSecurityGroupAttribute
 
-## Quick start
-
-### Linux/macOS
-```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-
-# add your current /32
-python sg_auth.py --profile sg_auth
-
-# (one-time) remove 0.0.0.0/0 on 22 if present
-python sg_auth.py --profile sg_auth --purge
-Windows (PowerShell)
-powershell
-Copy code
+## Windows (PowerShell)
 python -m venv .venv
 . .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
@@ -59,31 +38,47 @@ pip install -r requirements.txt
 
 python sg_auth.py --profile sg_auth
 python sg_auth.py --profile sg_auth --purge
-Automate
-Windows Task Scheduler (hourly):
+
+## Automate
+- Windows (Task Scheduler, hourly):
 python C:\path\to\sg_auth.py --profile sg_auth
 
-Linux/macOS cron:
+- Linux/macOS (cron):
 0 * * * * /usr/bin/python3 /path/to/sg_auth.py --profile sg_auth
 
-Docs
-Usage: docs/USAGE.md
+## Sanity checks
+- Windows: Test-NetConnection -ComputerName <PUBLIC_IP> -Port 22
 
-Troubleshooting: docs/TROUBLESHOOTING.md
+- macOS/Linux: nc -vz <PUBLIC_IP> 22
 
-Security notes
-Don’t commit access keys. Use the Alibaba CLI profile.
+## How it works
 
-Prefer key-based SSH; disable passwords in /etc/ssh/sshd_config.
+1. Detects your current public IPv4.
 
-markdown
-Copy code
+2. (Optional --purge) Removes any 0.0.0.0/0 rule for port 22/22.
 
-Optional tiny polish:
-- Under the main title, add your CI badge (it’s okay if you chose the “always-green” workflow):  
-  `![CI](https://github.com/Khadnaz/automate_sg/actions/workflows/ci.yml/badge.svg)`
-- In the repo’s “About” panel, add topics: `alibaba-cloud`, `security`, `python`, `automation`, `devops`.
-- Create a release tag `v1.0.0` (Releases → Draft a new release).
+3. Adds an allow rule for yourIP/32 on 22/22.
 
-If you want, say “paste it for me exactly here/there” and I’ll provide the precise lines to replace in your README.
+4. Stores your last IP locally (last_ip.txt) so a new run can revoke the old /32.
+
+## Security notes
+- Never commit access keys. Use the Alibaba CLI profile (or env vars).
+
+- Prefer key-based SSH; disable passwords in /etc/ssh/sshd_config.
+
+## Repo structure
+.
+├─ sg_auth.py                 # updates the Security Group
+├─ mycred_acs.py              # loads Alibaba CLI profile creds
+├─ requirements.txt
+├─ .gitignore
+├─ .github/
+│  └─ workflows/ci.yml        # CI (lint/sanity)
+├─ docs/
+│  └─ TROUBLESHOOTING.md
+└─ LICENSE
+
+## License
+
+If you still see everything as one big grey block after pasting this, click “Raw” on GitHub to confirm the backticks are intact, then paste again.
 ::contentReference[oaicite:0]{index=0}
