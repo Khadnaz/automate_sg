@@ -43,14 +43,6 @@ Uses Alibaba CLI profile (no hardcoded keys).
 
 Before/after verification via DescribeSecurityGroupAttribute.
 
-Add screenshots in docs/images/ (see below).
-
-Screenshots / evidence (optional)
-
-Before: SG shows 0.0.0.0/0 on 22
-
-After: SG shows x.x.x.x/32 on 22
-
 Connectivity: Test-NetConnection <public-ip> -Port 22 (Windows) or nc -vz <ip> 22
 
 Security notes
