@@ -15,20 +15,26 @@ Keeps remote access **locked down** by allowing only *your* current public IP (/
 Exposing SSH to `0.0.0.0/0` is risky. This tool enforces least privilege by updating a single `/32` rule whenever your IP changes.
 
 ## Quick start
+# Alibaba ECS Security Group Auto-IP Updater (`sg_auth`)
+
+Keep SSH locked down by allowing only *your* current public IP (/32) on an Alibaba Cloud **Security Group**—and removing old or world-open rules automatically.
+
+**Project specifics**
+- Region: me-central-1 (Riyadh)
+- Security Group: sg-l4vimuwylkiv6dk7jxc6
+- Port: SSH (22/22)
+- CLI Profile: sg_auth
+
+## Why
+Exposing SSH to `0.0.0.0/0` is risky. This tool enforces least-privilege by updating a single `/32` rule when your IP changes and optionally purging world-open rules.
+
+## Quick start
 ```bash
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python -m venv .venv && source .venv/bin/activate    # Windows: .venv\Scripts\activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-
-
-Run it:
-
-python sg_auth.py --profile sg_auth
-
-
-One-time cleanup (remove any world-open 22/22 rule):
-
-python sg_auth.py --profile sg_auth --purge
+python sg_auth.py --profile sg_auth           # add your current /32
+python sg_auth.py --profile sg_auth --purge   # (one-time) remove 0.0.0.0/0 on 22
 
 Automate
 
@@ -36,28 +42,29 @@ Windows Task Scheduler (hourly): python C:\path\to\sg_auth.py --profile sg_auth
 
 Linux/macOS cron: 0 * * * * /usr/bin/python3 /path/to/sg_auth.py --profile sg_auth
 
-Proof (for recruiters)
+Docs
 
-Replaces 0.0.0.0/0 SSH with a strict /32 tied to your current IP.
+Usage: docs/USAGE.md
 
-Uses Alibaba CLI profile (no hardcoded keys).
+Troubleshooting: docs/TROUBLESHOOTING.md
 
-Before/after verification via DescribeSecurityGroupAttribute.
-
-Connectivity: Test-NetConnection <public-ip> -Port 22 (Windows) or nc -vz <ip> 22
+Proof for recruiters (what to screenshot): docs/PROOF.md
 
 Security notes
 
-Never commit access keys. Use aliyun configure (CLI profile).
+Don’t commit access keys. Use aliyun configure (CLI profile).
 
 Prefer key-based SSH; disable passwords in /etc/ssh/sshd_config.
 
 License
 
-MIT — see LICENSE.
+MIT — see LICENSE
+.
 
 
-2) requirements.txt
+Then add the missing files (website → Add file → Create new file):
+
+requirements.txt
 
 
 aliyun-python-sdk-core>=2.13.0
@@ -65,7 +72,7 @@ aliyun-python-sdk-ecs>=4.24.0
 requests>=2.28.0
 
 
-3) .gitignore
+.gitignore
 
 
 .venv/
@@ -77,86 +84,40 @@ pycache/
 last_ip.txt
 
 
-4) docs/USAGE.md
-```markdown
-# Usage
+docs/USAGE.md
 
-## Configure Alibaba CLI
-```bash
-aliyun configure
-# profile name: sg_auth
-# region: me-central-1
+Usage
 
-Run
+aliyun configure # profile: sg_auth, region: me-central-1
 python sg_auth.py --profile sg_auth
-# optional one-time cleanup:
-python sg_auth.py --profile sg_auth --purge
-
-Test reachability
-
-Windows:
-
-Test-NetConnection -ComputerName <PUBLIC_IP> -Port 22
+python sg_auth.py --profile sg_auth --purge # one-time cleanup
+Windows: Test-NetConnection -ComputerName <PUBLIC_IP> -Port 22
+macOS/Linux: nc -vz <PUBLIC_IP> 22
 
 
-Linux/macOS:
-
-nc -vz <PUBLIC_IP> 22
+docs/TROUBLESHOOTING.md
 
 
-5) docs/TROUBLESHOOTING.md
-```markdown
-# Troubleshooting
+Ensure instance has a public IP/EIP and the attached SG is sg-l4vimuwylkiv6dk7jxc6 in me-central-1.
 
-- **Still can’t SSH**: ensure the instance has a public IP/EIP and that the attached SG is `sg-l4vimuwylkiv6dk7jxc6` in region `me-central-1`.
-- **OS firewall**:
-  - Ubuntu: `sudo ufw allow 22/tcp && sudo ufw reload`
-  - CentOS: `sudo firewall-cmd --permanent --add-service=ssh && sudo firewall-cmd --reload`
-- **Credentials warning**: remove any hardcoded keys in `mycred_acs.py`; use `aliyun configure list` to confirm profile.
+OS firewall:
+
+Ubuntu: sudo ufw allow 22/tcp && sudo ufw reload
+
+CentOS: sudo firewall-cmd --permanent --add-service=ssh && sudo firewall-cmd --reload
+
+Remove any hardcoded keys from mycred_acs.py; use aliyun configure list.
 
 
 docs/PROOF.md
 
-# Proof
 
-- Goal: automate least-privilege SSH on Alibaba ECS by keeping only current `/32`.
-- Design: use CLI profile, add `/32` for 22/22, optional `--purge` to remove `0.0.0.0/0`, track last IP locally.
-- Ops: cron/Task Scheduler; describe SG before/after.
-- Evidence to include: SG screenshots before/after, connectivity check output, short demo GIF.
+Before/after SG screenshots (22/22: 0.0.0.0/0 → your /32).
 
+Connectivity check screenshot.
 
-SECURITY.md
-
-# Security
-
-- Do not commit access keys. Use Alibaba CLI or env vars.
-- Enforce `/32` on admin ports; remove `0.0.0.0/0`.
-- Prefer key-based SSH; disable password auth.
-- If secrets were exposed, rotate keys and scrub history before pushing.
+Short note on least-privilege + purge logic.
 
 
-LICENSE
-
-MIT License
-Copyright (c) 2025
-Permission is hereby granted, free of charge, to any person obtaining a copy
-... (standard MIT text is acceptable here) ...
-
-
-(optional, nice to have) 9) .github/workflows/ci.yml
-Create folders by typing the full path:
-
-filename: .github/workflows/ci.yml
-
-name: ci
-on: [push, pull_request]
-jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: python -m pip install --upgrade pip ruff
-      - run: ruff check .
+If you want, I can give you a tiny “Topics” list and a one-liner for your CV once you push those files.
+::contentReference[oaicite:1]{index=1}
