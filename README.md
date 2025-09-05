@@ -1,6 +1,7 @@
 README.md
 
 # Alibaba ECS Security Group Auto-IP Updater (`sg_auth`)
+![CI](https://github.com/Khadnaz/automate_sg/actions/workflows/ci.yml/badge.svg)
 
 Keeps remote access **locked down** by allowing only *your* current public IP (/32) on an Alibaba Cloud **Security Group** and removing old/world-open rules.
 
